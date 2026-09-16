@@ -43,8 +43,8 @@ class SyntheticConfig:
             raise ValueError("M1 currently requires exactly 5 features")
         if not 0.0 < self.treatment_probability < 1.0:
             raise ValueError("treatment_probability must be strictly between 0 and 1")
-        if self.scenario not in {"randomized", "confounded"}:
-            raise ValueError("scenario must be randomized or confounded")
+        if self.scenario not in {"randomized", "confounded", "weak_overlap"}:
+            raise ValueError("scenario must be randomized, confounded, or weak_overlap")
 
 
 def _sigmoid(z: np.ndarray) -> np.ndarray:
@@ -83,8 +83,11 @@ def generate_synthetic_data(config: SyntheticConfig | None = None) -> pd.DataFra
 
     if config.scenario == "randomized":
         propensity = np.full(config.n_samples, config.treatment_probability)
-    else:
+    elif config.scenario == "confounded":
         propensity = _sigmoid(0.9 * x1 - 0.7 * x2 + 0.25 * x5)
+    else:
+        # Deliberately weak overlap: assignment is much more deterministic.
+        propensity = _sigmoid(2.8 * x1 - 2.2 * x2 + 0.8 * x5)
     treatment = rng.binomial(1, propensity)
 
     y0 = rng.binomial(1, mu0)
