@@ -33,6 +33,7 @@ class SyntheticConfig:
     n_samples: int = 20_000
     n_features: int = 5
     treatment_probability: float = 0.5
+    scenario: str = "randomized"
     seed: int = 42
 
     def validate(self) -> None:
@@ -42,13 +43,15 @@ class SyntheticConfig:
             raise ValueError("M1 currently requires exactly 5 features")
         if not 0.0 < self.treatment_probability < 1.0:
             raise ValueError("treatment_probability must be strictly between 0 and 1")
+        if self.scenario not in {"randomized", "confounded"}:
+            raise ValueError("scenario must be randomized or confounded")
 
 
 def _sigmoid(z: np.ndarray) -> np.ndarray:
     return 1.0 / (1.0 + np.exp(-z))
 
 
-def generate_randomized_data(config: SyntheticConfig | None = None) -> pd.DataFrame:
+def generate_synthetic_data(config: SyntheticConfig | None = None) -> pd.DataFrame:
     """Generate a randomized binary-treatment, binary-outcome dataset.
 
     The DGP separates baseline response from treatment-effect heterogeneity.
@@ -78,7 +81,10 @@ def generate_randomized_data(config: SyntheticConfig | None = None) -> pd.DataFr
     mu1 = np.clip(mu0 + desired_effect, 0.01, 0.99)
     tau = mu1 - mu0
 
-    propensity = np.full(config.n_samples, config.treatment_probability)
+    if config.scenario == "randomized":
+        propensity = np.full(config.n_samples, config.treatment_probability)
+    else:
+        propensity = _sigmoid(0.9 * x1 - 0.7 * x2 + 0.25 * x5)
     treatment = rng.binomial(1, propensity)
 
     y0 = rng.binomial(1, mu0)
@@ -95,7 +101,7 @@ def generate_randomized_data(config: SyntheticConfig | None = None) -> pd.DataFr
     data["propensity_true"] = propensity
     data["y0"] = y0
     data["y1"] = y1
-    data["scenario"] = "randomized"
+    data["scenario"] = config.scenario
     data["seed"] = config.seed
     return data
 
@@ -128,3 +134,14 @@ def model_feature_columns(data: pd.DataFrame) -> list[str]:
     # selected. Keeping the set operation visible documents that boundary.
     _ = oracle_present
     return [column for column in data.columns if column.startswith("x") and column[1:].isdigit()]
+
+
+
+def generate_randomized_data(config: SyntheticConfig | None = None) -> pd.DataFrame:
+    """Backward-compatible helper that always uses randomized assignment."""
+    config = config or SyntheticConfig()
+    return generate_synthetic_data(SyntheticConfig(
+        n_samples=config.n_samples, n_features=config.n_features,
+        treatment_probability=config.treatment_probability,
+        scenario="randomized", seed=config.seed,
+    ))
