@@ -10,23 +10,31 @@ CounterfactualLab is a hands-on causal inference lab for learning uplift modelin
 
 |                          |                                                                                                                               |
 |:-------------------------|:------------------------------------------------------------------------------------------------------------------------------|
-| **Research question**    | Why isn’t predicting who will engage the same as predicting who will engage **because of** a recommendation?                  |
-| **Causal target**        | `tau(x) = E[Y(1) - Y(0) | X=x]`                                                                                               |
+| **Research question**    | Why isn't predicting who will engage the same as predicting who will engage **because of** a recommendation?                  |
+| **Causal target**        | $\tau(x)=\mathbb{E}[Y(1)-Y(0)\mid X=x]$                                                                                               |
 | **Synthetic setting**    | Controlled potential outcomes expose true CATE, treatment propensities, counterfactuals, and oracle policy value.             |
-| **Real experiment**      | 42,613 Hillstrom customers in the Men’s Email vs No Email comparison, using conversion as the outcome.                        |
+| **Real experiment**      | 42,613 Hillstrom customers in the Men's Email vs No Email comparison, using conversion as the outcome.                        |
 | **Main pattern**         | Response probability and treatment effect can rank users very differently.                                                    |
 | **Key failure modes**    | Observed confounding, weak overlap, hidden confounding, and evaluation leakage.                                               |
-| **Evaluation principle** | Learned uplift rankings are scored out of fold so a row’s factual outcome is not used to train the model that ranks that row. |
+| **Evaluation principle** | Learned uplift rankings are scored out of fold so a row's factual outcome is not used to train the model that ranks that row. |
 
 ## Why This Project Exists
 
 A conventional response model asks:
 
-`P(Y=1 | X, T=1)` — **who is likely to respond if treated?**
+$$
+P(Y=1 \mid X,T=1)
+$$
+
+**Who is likely to respond if treated?**
 
 Causal targeting asks:
 
-`tau(x) = E[Y(1) - Y(0) | X=x]` — **whose outcome changes because of treatment?**
+$$
+\tau(x)=\mathbb{E}[Y(1)-Y(0)\mid X=x]
+$$
+
+**Whose outcome changes because of treatment?**
 
 These are different targets.
 
@@ -38,7 +46,7 @@ Under a treatment budget, the final object is not merely a prediction. It is a p
 
 |                             | Response prediction          | Causal targeting                      |
 |-----------------------------|:-----------------------------|:--------------------------------------|
-| **Target**                  | `P(Y=1 | X, T=1)`            | `E[Y(1)-Y(0) | X=x]`                  |
+| **Target**                  | $P(Y=1 \mid X,T=1)$         | $\mathbb{E}[Y(1)-Y(0)\mid X=x]$                  |
 | **Question**                | Who will respond if treated? | Who responds because of treatment?    |
 | **Needs a counterfactual?** | No                           | Yes                                   |
 | **Typical use**             | Response scoring             | Incremental targeting / uplift policy |
@@ -137,11 +145,11 @@ On Hillstrom, however, honest evaluation materially changed the apparent ranking
 | T-Learner | 171.45                  |           136.55 |                               0.0078 |
 | Random    | 140.74                  |           140.74 |                               0.0078 |
 
-The observed randomized conversion effect for Men’s Email vs No Email was **0.0068**.
+The observed randomized conversion effect for Men's Email vs No Email was **0.0068**.
 
 These are point estimates from one experiment and one random ranking. They do **not** establish that one ranking method is superior; uncertainty was not estimated.
 
-The methodological lesson is more important than the ordering: **randomization addresses treatment assignment, while cross-fitting separately prevents each row’s factual outcome from helping train the model that produces that row’s evaluation score.**
+The methodological lesson is more important than the ordering: **randomization addresses treatment assignment, while cross-fitting separately prevents each row's factual outcome from helping train the model that produces that row's evaluation score.**
 
 ## Learning Path
 
@@ -174,11 +182,11 @@ CounterfactualLab is organized as a sequence of causal questions rather than a s
 
 **Overlap matters.** If comparable treated and untreated users are absent in parts of feature space, weighting and regression cannot manufacture missing counterfactual support.
 
-**Individual treatment-effect labels are latent.** Individual `Y(1)-Y(0)` and categories such as “persuadable” are not ordinarily observed. Synthetic data expose both potential outcomes only for learning and validation.
+**Individual treatment-effect labels are latent.** Individual `Y(1)-Y(0)` and categories such as "persuadable" are not ordinarily observed. Synthetic data expose both potential outcomes only for learning and validation.
 
-**Real data remove the oracle.** Hillstrom is randomized, so factual treatment/control outcomes support causal evaluation at group and policy levels. They do not reveal each customer’s missing counterfactual, true individual CATE, or PEHE.
+**Real data remove the oracle.** Hillstrom is randomized, so factual treatment/control outcomes support causal evaluation at group and policy levels. They do not reveal each customer's missing counterfactual, true individual CATE, or PEHE.
 
-**Randomization does not remove evaluation leakage.** M4 and M11 use five-fold cross-fitted response and T-Learner scores so each row is ranked by models fit without that row. Randomization addresses treatment assignment; cross-fitting separately keeps the row’s factual outcome out of the model that produces its evaluation score.
+**Randomization does not remove evaluation leakage.** M4 and M11 use five-fold cross-fitted response and T-Learner scores so each row is ranked by models fit without that row. Randomization addresses treatment assignment; cross-fitting separately keeps the row's factual outcome out of the model that produces its evaluation score.
 
 **AUUC here is pedagogical.** The M4/M11 implementation integrates cumulative estimated incremental outcomes. It should not be interpreted as a universally standardized Qini coefficient.
 
@@ -228,7 +236,7 @@ python scripts/run_hillstrom.py
 
 ## Hillstrom Data
 
-M11 uses Kevin Hillstrom’s randomized email-marketing experiment. Download the original CSV and save it as:
+M11 uses Kevin Hillstrom's randomized email-marketing experiment. Download the original CSV and save it as:
 
 ``` text
 data/raw/hillstrom.csv
@@ -244,7 +252,7 @@ Then run:
 python scripts/run_hillstrom.py
 ```
 
-M11 starts with the binary comparison **Men’s Email vs No Email** and uses **conversion** as the outcome. The Women’s Email arm remains available for later extensions.
+M11 starts with the binary comparison **Men's Email vs No Email** and uses **conversion** as the outcome. The Women's Email arm remains available for later extensions.
 
 ## What This Lab Does Not Claim
 
