@@ -24,14 +24,14 @@ Those rankings need not agree. A user can have high baseline response probabilit
 | M1 | What is a counterfactual? | Only one potential outcome is factual for each user. |
 | M2 | Is response prediction uplift? | No: high response can reflect high baseline risk rather than treatment effect. |
 | M3 | How can CATE be estimated? | A T-Learner models treated and control outcomes separately. |
-| M4 | How can uplift be evaluated? | Randomized factual outcomes support group/ranking evaluation without individual `tau_true`. |
+| M4 | How can uplift be evaluated? | Randomized factual outcomes support group/ranking evaluation; learned rankings should be scored out of fold. |
 | M5 | What does confounding do? | Treatment-control differences can be badly biased when assignment depends on outcome predictors. |
 | M6 | What do propensity scores/IPW do? | Reweighting can balance observed confounders under identification and overlap assumptions. |
 | M7 | What is doubly robust estimation? | AIPW combines propensity and outcome nuisance models; cross-fitting keeps nuisance predictions out of fold. |
 | M8 | What if overlap is weak? | Extreme propensities create unstable weights and low effective sample size; better ML cannot create support. |
 | M9 | What if a confounder is hidden? | Excellent observed balance does not establish exchangeability; IPW/DR do not remove unobserved confounding. |
 | M10 | How does CATE become a decision? | Rank estimated effects, impose a budget, and evaluate the resulting treatment policy. |
-| M11 | What changes on real randomized data? | Hillstrom permits experimental uplift evaluation, but true individual effects, PEHE, and oracle policy value are unavailable. |
+| M11 | What changes on real randomized data? | Hillstrom permits experimental uplift evaluation, but honest learned-ranking evaluation still requires train/evaluation separation. |
 
 ## Selected results
 
@@ -44,7 +44,8 @@ The synthetic experiments deliberately change treatment assignment and other con
 - **M8:** weak overlap reduced IPW effective sample size to about 6.2% of 20,000 observations and substantially increased across-seed IPW variability.
 - **M9:** weighting reduced maximum observed-X SMD from 0.647 to 0.004, yet hidden-confounder imbalance remained and IPW/DR estimates stayed far from the true ATE.
 - **M10:** at a 20% treatment budget, T-Learner targeting achieved synthetic oracle incremental gain of 0.0391 per population member versus 0.0248 for response targeting.
-- **M11:** Men's Email versus No Email contained 42,613 Hillstrom customers. The observed randomized conversion effect was 0.0068; pedagogical AUUC was 171.45 for T-Learner ranking, 163.84 for response ranking, and 140.74 for one random ranking.
+- **M4:** with five-fold out-of-fold ranking scores, pedagogical AUUC was 1101.24 for the T-Learner, 820.89 for response ranking, and 558.17 for one random ranking. The synthetic oracle check still gave 195.46 versus 124.47 expected incremental conversions per 1,000 treatments for T-Learner versus response targeting.
+- **M11:** Men's Email versus No Email contained 42,613 Hillstrom customers. The observed randomized conversion effect was 0.0068. With five-fold out-of-fold ranking scores, pedagogical AUUC was 136.55 for T-Learner ranking, 146.19 for response ranking, and 140.74 for one random ranking. These point estimates do not establish that one ranking method is superior; uncertainty was not estimated.
 
 These are experiment outputs, not universal performance claims.
 
@@ -61,6 +62,8 @@ These are experiment outputs, not universal performance claims.
 **Individual treatment-effect labels are latent.** Individual `Y(1)-Y(0)` and categories such as “persuadable” are not ordinarily observed. Synthetic data expose both potential outcomes only for learning and validation.
 
 **Real data remove the oracle.** Hillstrom is randomized, so factual treatment/control outcomes support causal evaluation at group and policy levels. They do not reveal each customer's missing counterfactual, true individual CATE, or PEHE.
+
+**Randomization does not remove evaluation leakage.** M4 and M11 use five-fold cross-fitted response and T-Learner scores so each row is ranked by models fit without that row. Randomization addresses treatment assignment; cross-fitting separately keeps the row's factual outcome out of the model that produces its evaluation score.
 
 **AUUC here is pedagogical.** The M4/M11 implementation integrates cumulative estimated incremental outcomes. It should not be interpreted as a universally standardized Qini coefficient.
 
